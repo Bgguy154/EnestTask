@@ -79,7 +79,7 @@ npm run dev
 ```
 
 - The frontend will be available at [http://localhost:5173](http://localhost:5173)
-- The backend API runs at [http://localhost:5000](http://localhost:5000)
+- The backend API runs at [http://localhost:5000](http://localhost:5004)
 
 ### API Endpoints
 

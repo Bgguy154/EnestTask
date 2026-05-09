@@ -1,7 +1,7 @@
 import express, { json } from "express";
 
-import { connect } from "mongoose";
-
+import mongoose from "mongoose";
+import {connect} from "mongoose"
 import { config } from "dotenv";
 
 import cookieParser from "cookie-parser";
@@ -26,14 +26,12 @@ const app = express();
 //app.use(helmet());
 
 app.use(json());
-
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: "http://localhost:5173",
     credentials: true,
   })
 );
-
 app.use(cookieParser());
 
 connect(process.env.MONGO_URI)
@@ -61,6 +59,8 @@ app.get("/api/health", (req, res) => {
 app.use(notFound);
 
 app.use(errorHandler);
+
+
 
 const PORT = process.env.PORT || 5000;
 

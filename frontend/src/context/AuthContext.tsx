@@ -1,4 +1,11 @@
-import React, { createContext, useState, useEffect,type  ReactNode, type JSX } from 'react';
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  type ReactNode,
+  type JSX,
+} from 'react';
+
 import axios from 'axios';
 
 interface User {
@@ -10,60 +17,128 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (username: string, email: string, password: string) => Promise<boolean>;
+
+  login: (
+    email: string,
+    password: string
+  ) => Promise<boolean>;
+
+  register: (
+    username: string,
+    email: string,
+    password: string
+  ) => Promise<boolean>;
+
   logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+const AuthContext = createContext<AuthContextType>(
+  {} as AuthContextType
+);
 
 interface Props {
   children: ReactNode;
 }
 
-export const AuthProvider = ({ children }: Props): JSX.Element => {
-  const [user, setUser] = useState<User | null>(null);
+const API_URL = import.meta.env.VITE_API_URL;
+
+export const AuthProvider = ({
+  children,
+}: Props): JSX.Element => {
+  const [user, setUser] = useState<User | null>(
+    null
+  );
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const res = await axios.get<User>('/api/auth/profile');
+        const res = await axios.get<User>(
+          `${API_URL}/auth/profile`,
+          {
+            withCredentials: true,
+          }
+        );
+
         setUser(res.data);
-      } catch {
+      } catch (error) {
         setUser(null);
       } finally {
         setLoading(false);
       }
     };
+
     loadUser();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<boolean> => {
     try {
-      const res = await axios.post<User>('/api/auth/login', { email, password });
+      const res = await axios.post<User>(
+        `${API_URL}/auth/login`,
+        {
+          email,
+          password,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
       setUser(res.data);
+
       return true;
     } catch (err: any) {
-      console.error(err.response?.data?.message);
+      console.error(
+        err.response?.data?.message
+      );
+
       return false;
     }
   };
 
-  const register = async (username: string, email: string, password: string): Promise<boolean> => {
+  const register = async (
+    username: string,
+    email: string,
+    password: string
+  ): Promise<boolean> => {
     try {
-      const res = await axios.post<User>('/api/auth/register', { username, email, password });
+      const res = await axios.post<User>(
+        `${API_URL}/auth/register`,
+        {
+          username,
+          email,
+          password,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
       setUser(res.data);
+
       return true;
     } catch (err: any) {
-      console.error(err.response?.data?.message);
+      console.error(
+        err.response?.data?.message
+      );
+
       return false;
     }
   };
 
   const logout = async (): Promise<void> => {
     try {
-      await axios.get('/api/auth/logout');
+      await axios.get(
+        `${API_URL}/auth/logout`,
+        {
+          withCredentials: true,
+        }
+      );
+
       setUser(null);
     } catch (err) {
       console.error(err);
@@ -71,7 +146,15 @@ export const AuthProvider = ({ children }: Props): JSX.Element => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

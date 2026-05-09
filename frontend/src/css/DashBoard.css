@@ -19,6 +19,121 @@
   top: 100px;
 }
 
+.project-list {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.project-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1rem 1rem 1.25rem;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.project-card.active {
+  border-color: #667eea;
+  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.12);
+  transform: translateY(-1px);
+}
+
+.project-card:hover {
+  transform: translateY(-2px);
+}
+
+.project-detail-link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: #2563eb;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.project-detail-link:hover {
+  color: #1d4ed8;
+}
+
+.project-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.task-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.tasks-header-row {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+.task-controls input,
+.task-controls select {
+  min-width: 160px;
+  padding: 0.95rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: white;
+}
+
+.task-meta {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: white;
+}
+
+.status-badge.todo {
+  background: #2563eb;
+}
+
+.status-badge.in-progress {
+  background: #f59e0b;
+}
+
+.status-badge.done {
+  background: #10b981;
+}
+
+.edit-fields {
+  display: grid;
+  gap: 1rem;
+}
+
+.edit-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+}
+
+.task-actions button.edit-btn {
+  padding: 0.75rem 1.25rem;
+}
+
 .dashboard-sidebar h3 {
   font-size: 1.5rem;
   font-weight: 700;

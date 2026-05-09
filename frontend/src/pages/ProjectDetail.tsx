@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, type JSX } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import AuthContext from '../context/AuthContext';
@@ -27,24 +27,22 @@ interface Project {
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const Dashboard = (): JSX.Element => {
+const ProjectDetail = (): JSX.Element => {
+  const { projectId } = useParams();
+  const navigate = useNavigate();
   const { user } = useContext(AuthContext);
 
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
-
-  const [newProjectName, setNewProjectName] = useState('');
-  const [newProjectDescription, setNewProjectDescription] = useState('');
-
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskDescription, setNewTaskDescription] = useState('');
-  const [newTaskStatus, setNewTaskStatus] = useState<TaskStatus>('todo');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortOption, setSortOption] = useState('newest');
+
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [newTaskStatus, setNewTaskStatus] = useState<TaskStatus>('todo');
 
   const [editingTaskId, setEditingTaskId] = useState('');
   const [editingTaskTitle, setEditingTaskTitle] = useState('');
@@ -52,110 +50,47 @@ const Dashboard = (): JSX.Element => {
   const [editingTaskStatus, setEditingTaskStatus] = useState<TaskStatus>('todo');
 
   useEffect(() => {
-    if (user) {
-      fetchProjects();
+    if (user && projectId) {
+      fetchProject(projectId);
+      fetchTasks(projectId);
     }
-  }, [user]);
+  }, [user, projectId]);
 
-  useEffect(() => {
-    if (selectedProjectId) {
-      fetchTasks(selectedProjectId);
-    } else {
-      setTasks([]);
-    }
-  }, [selectedProjectId]);
-
-  const fetchProjects = async () => {
+  const fetchProject = async (id: string) => {
     try {
       setLoading(true);
-      const res = await axios.get<Project[]>(`${API_URL}/projects`, {
+      const res = await axios.get<Project>(`${API_URL}/projects/${id}`, {
         withCredentials: true,
       });
-      setProjects(res.data);
-
-      if (res.data.length > 0) {
-        setSelectedProjectId((current) =>
-          current && res.data.some((project) => project._id === current)
-            ? current
-            : res.data[0]._id
-        );
-      } else {
-        setSelectedProjectId('');
-        setTasks([]);
-      }
+      setProject(res.data);
     } catch (err) {
-      toast.error('Failed to fetch projects.');
+      toast.error('Failed to load project.');
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchTasks = async (projectId: string) => {
-    if (!projectId) {
-      setTasks([]);
-      return;
-    }
-
+  const fetchTasks = async (id: string) => {
     try {
       setLoading(true);
       const res = await axios.get<Task[]>(`${API_URL}/tasks`, {
-        params: { projectId },
+        params: { projectId: id },
         withCredentials: true,
       });
       setTasks(res.data);
     } catch (err) {
-      toast.error('Failed to fetch tasks.');
+      toast.error('Failed to load tasks.');
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!newProjectName.trim()) {
-      toast.error('Please enter a project name.');
-      return;
-    }
-
-    try {
-      await axios.post(
-        `${API_URL}/projects`,
-        {
-          name: newProjectName,
-          description: newProjectDescription,
-        },
-        {
-          withCredentials: true,
-        }
-      );
-
-      setNewProjectName('');
-      setNewProjectDescription('');
-      toast.success('Project created successfully!');
-      fetchProjects();
-    } catch (err) {
-      toast.error('Failed to create project.');
-      console.error(err);
-    }
-  };
-
-  const handleSelectProject = (projectId: string) => {
-    setSelectedProjectId(projectId);
-    setSearchQuery('');
-    setStatusFilter('all');
   };
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedProjectId) {
-      toast.error('Select a project first.');
-      return;
-    }
-
+    if (!projectId) return;
     if (!newTaskTitle.trim()) {
       toast.error('Please enter a task title.');
       return;
@@ -163,7 +98,7 @@ const Dashboard = (): JSX.Element => {
 
     try {
       await axios.post(
-        `${API_URL}/projects/${selectedProjectId}/tasks`,
+        `${API_URL}/projects/${projectId}/tasks`,
         {
           title: newTaskTitle,
           description: newTaskDescription,
@@ -178,8 +113,8 @@ const Dashboard = (): JSX.Element => {
       setNewTaskDescription('');
       setNewTaskStatus('todo');
       toast.success('Task created successfully!');
-      fetchTasks(selectedProjectId);
-      fetchProjects();
+      fetchTasks(projectId);
+      fetchProject(projectId);
     } catch (err) {
       toast.error('Failed to create task.');
       console.error(err);
@@ -201,8 +136,8 @@ const Dashboard = (): JSX.Element => {
       });
 
       toast.success('Task deleted successfully!');
-      fetchTasks(selectedProjectId);
-      fetchProjects();
+      if (projectId) fetchTasks(projectId);
+      if (projectId) fetchProject(projectId);
     } catch (err) {
       toast.error('Failed to delete task.');
       console.error(err);
@@ -241,7 +176,7 @@ const Dashboard = (): JSX.Element => {
 
       toast.success('Task updated successfully!');
       setEditingTaskId('');
-      fetchTasks(selectedProjectId);
+      if (projectId) fetchTasks(projectId);
     } catch (err) {
       toast.error('Failed to update task.');
       console.error(err);
@@ -261,7 +196,7 @@ const Dashboard = (): JSX.Element => {
         }
       );
 
-      fetchTasks(selectedProjectId);
+      if (projectId) fetchTasks(projectId);
     } catch (err) {
       toast.error('Failed to update task status.');
       console.error(err);
@@ -290,83 +225,45 @@ const Dashboard = (): JSX.Element => {
 
   const completedTasks = tasks.filter((task) => task.status === 'done').length;
   const totalTasks = tasks.length;
-  const selectedProject = projects.find(
-    (project) => project._id === selectedProjectId
-  );
 
-  return (
-    <div className="dashboard-container">
-      <div className="dashboard-sidebar">
-        <h3>Projects</h3>
-
-        <div className="project-list">
-          {projects.length === 0 ? (
-            <p className="empty-state">No projects yet. Add one below.</p>
-          ) : (
-            projects.map((project) => (
-              <div
-                key={project._id}
-                className={`project-card ${
-                  project._id === selectedProjectId ? 'active' : ''
-                }`}
-                onClick={() => handleSelectProject(project._id)}
-              >
-                <div className="project-card-header">
-                  <strong>{project.name}</strong>
-                  <span>{project.tasksCount || 0} tasks</span>
-                </div>
-                <p>{project.description || 'No description yet.'}</p>
-                <small>
-                  Created {new Date(project.createdAt).toLocaleDateString()}
-                </small>
-                <Link
-                  to={`/dashboard/project/${project._id}`}
-                  className="project-detail-link"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  View details
-                </Link>
-              </div>
-            ))
-          )}
-        </div>
-
-        <h3>Overview</h3>
-        <div className="stats-grid">
-          <div className="stat-card">
-            <span className="stat-number">{totalTasks}</span>
-            <span className="stat-label">Tasks in project</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-number">{completedTasks}</span>
-            <span className="stat-label">Completed</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-number">{totalTasks - completedTasks}</span>
-            <span className="stat-label">Remaining</span>
+  if (!projectId) {
+    return (
+      <div className="dashboard-container">
+        <div className="dashboard-main">
+          <div className="dashboard-header">
+            <h2>Project not selected</h2>
+            <p>Please choose a project from the dashboard.</p>
+            <Link to="/dashboard">Back to dashboard</Link>
           </div>
         </div>
       </div>
+    );
+  }
 
+  return (
+    <div className="dashboard-container">
       <div className="dashboard-main">
         <div className="dashboard-header">
-          <h2>Welcome back, {user?.username || 'Guest'}!</h2>
-          <p>
-            Manage your projects and tasks with search, filter, and quick edits.
-          </p>
+          <h2>{project?.name || 'Project details'}</h2>
+          <p>{project?.description || 'Manage tasks for this project.'}</p>
+          <div className="task-controls">
+            <button className="project-detail-link" onClick={() => navigate('/dashboard')}>
+              Back to dashboard
+            </button>
+          </div>
         </div>
 
         <div className="task-form">
-          <h4>Create New Project</h4>
-          <form onSubmit={handleCreateProject}>
+          <h4>Add Task to Project</h4>
+          <form onSubmit={handleCreateTask}>
             <div className="task-form-grid">
               <div className="form-field">
-                <label>Project Name</label>
+                <label>Task Title</label>
                 <input
                   type="text"
-                  placeholder="Enter project name"
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
+                  placeholder="Enter task title"
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
                   required
                 />
               </div>
@@ -374,76 +271,32 @@ const Dashboard = (): JSX.Element => {
                 <label>Description (Optional)</label>
                 <input
                   type="text"
-                  placeholder="Project description"
-                  value={newProjectDescription}
-                  onChange={(e) =>
-                    setNewProjectDescription(e.target.value)
-                  }
+                  placeholder="Add a description"
+                  value={newTaskDescription}
+                  onChange={(e) => setNewTaskDescription(e.target.value)}
                 />
               </div>
-              <button type="submit">Create Project</button>
+              <div className="form-field">
+                <label>Status</label>
+                <select
+                  value={newTaskStatus}
+                  onChange={(e) => setNewTaskStatus(e.target.value as TaskStatus)}
+                >
+                  <option value="todo">To Do</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="done">Done</option>
+                </select>
+              </div>
+              <button type="submit">Add Task</button>
             </div>
           </form>
-        </div>
-
-        <div className="task-form">
-          <h4>Create New Task</h4>
-          {selectedProject ? (
-            <form onSubmit={handleCreateTask}>
-              <div className="task-form-grid">
-                <div className="form-field">
-                  <label>Task Title</label>
-                  <input
-                    type="text"
-                    placeholder="Enter task title"
-                    value={newTaskTitle}
-                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="form-field">
-                  <label>Description (Optional)</label>
-                  <input
-                    type="text"
-                    placeholder="Add a description"
-                    value={newTaskDescription}
-                    onChange={(e) =>
-                      setNewTaskDescription(e.target.value)
-                    }
-                  />
-                </div>
-                <div className="form-field">
-                  <label>Status</label>
-                  <select
-                    value={newTaskStatus}
-                    onChange={(e) =>
-                      setNewTaskStatus(e.target.value as TaskStatus)
-                    }
-                  >
-                    <option value="todo">To Do</option>
-                    <option value="in-progress">In Progress</option>
-                    <option value="done">Done</option>
-                  </select>
-                </div>
-                <button type="submit">Add Task</button>
-              </div>
-            </form>
-          ) : (
-            <div className="empty-state">
-              <h4>Select a project to add tasks.</h4>
-            </div>
-          )}
         </div>
 
         <div className="tasks-section">
           <div className="tasks-header-row">
             <div>
-              <h3>
-                {selectedProject
-                  ? `${selectedProject.name} Tasks`
-                  : 'Select a project to view tasks'}
-              </h3>
-              <p>{selectedProject?.description}</p>
+              <h3>{project?.name || 'Project tasks'}</h3>
+              <p>{project?.description}</p>
             </div>
             <div className="task-controls">
               <input
@@ -474,23 +327,19 @@ const Dashboard = (): JSX.Element => {
           {loading ? (
             <div className="loading-container">
               <div className="loading-spinner"></div>
-              <p>Loading tasks...</p>
+              <p>Loading project tasks...</p>
             </div>
           ) : filteredTasks.length === 0 ? (
             <div className="empty-state">
               <h4>No tasks found.</h4>
-              <p>
-                Add a new task or change the project, filter, or search term.
-              </p>
+              <p>Use the form above to add a task to this project.</p>
             </div>
           ) : (
             <ul className="task-list">
               {filteredTasks.map((task) => (
                 <li
                   key={task._id}
-                  className={`task-item ${
-                    task.status === 'done' ? 'completed' : ''
-                  }`}
+                  className={`task-item ${task.status === 'done' ? 'completed' : ''}`}
                 >
                   <div className="task-content">
                     {editingTaskId === task._id ? (
@@ -499,47 +348,33 @@ const Dashboard = (): JSX.Element => {
                           <label>Title</label>
                           <input
                             value={editingTaskTitle}
-                            onChange={(e) =>
-                              setEditingTaskTitle(e.target.value)
-                            }
+                            onChange={(e) => setEditingTaskTitle(e.target.value)}
                           />
                         </div>
                         <div className="form-field">
                           <label>Description</label>
                           <input
                             value={editingTaskDescription}
-                            onChange={(e) =>
-                              setEditingTaskDescription(e.target.value)
-                            }
+                            onChange={(e) => setEditingTaskDescription(e.target.value)}
                           />
                         </div>
                         <div className="form-field">
                           <label>Status</label>
                           <select
                             value={editingTaskStatus}
-                            onChange={(e) =>
-                              setEditingTaskStatus(
-                                e.target.value as TaskStatus
-                              )
-                            }
+                            onChange={(e) => setEditingTaskStatus(e.target.value as TaskStatus)}
                           >
                             <option value="todo">To Do</option>
-                            <option value="in-progress">
-                              In Progress
-                            </option>
+                            <option value="in-progress">In Progress</option>
                             <option value="done">Done</option>
                           </select>
                         </div>
                       </div>
                     ) : (
                       <>
-                        <div className="task-title">
-                          {task.title}
-                        </div>
+                        <div className="task-title">{task.title}</div>
                         {task.description && (
-                          <div className="task-description">
-                            {task.description}
-                          </div>
+                          <div className="task-description">{task.description}</div>
                         )}
                         <div className="task-meta">
                           <span className={`status-badge ${task.status}`}>
@@ -549,9 +384,7 @@ const Dashboard = (): JSX.Element => {
                               ? 'In Progress'
                               : 'Done'}
                           </span>
-                          <small>
-                            {new Date(task.createdAt).toLocaleDateString()}
-                          </small>
+                          <small>{new Date(task.createdAt).toLocaleDateString()}</small>
                         </div>
                       </>
                     )}
@@ -560,16 +393,10 @@ const Dashboard = (): JSX.Element => {
                   <div className="task-actions">
                     {editingTaskId === task._id ? (
                       <>
-                        <button
-                          className="complete-btn"
-                          onClick={() => handleSaveTask(task._id)}
-                        >
+                        <button className="complete-btn" onClick={() => handleSaveTask(task._id)}>
                           Save
                         </button>
-                        <button
-                          className="delete-btn"
-                          onClick={handleCancelEdit}
-                        >
+                        <button className="delete-btn" onClick={handleCancelEdit}>
                           Cancel
                         </button>
                       </>
@@ -594,16 +421,10 @@ const Dashboard = (): JSX.Element => {
                             ? 'Mark Done'
                             : 'Start'}
                         </button>
-                        <button
-                          className="edit-btn"
-                          onClick={() => handleStartEdit(task)}
-                        >
+                        <button className="edit-btn" onClick={() => handleStartEdit(task)}>
                           Edit
                         </button>
-                        <button
-                          className="delete-btn"
-                          onClick={() => handleDeleteTask(task._id)}
-                        >
+                        <button className="delete-btn" onClick={() => handleDeleteTask(task._id)}>
                           Delete
                         </button>
                       </>
@@ -619,4 +440,4 @@ const Dashboard = (): JSX.Element => {
   );
 };
 
-export default Dashboard;
+export default ProjectDetail;

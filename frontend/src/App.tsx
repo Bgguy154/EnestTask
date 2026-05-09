@@ -8,6 +8,7 @@ import Welcome from './pages/Welcome';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import ProjectDetail from './pages/ProjectDetail';
 import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 
@@ -31,10 +32,13 @@ function App(): JSX.Element {
       />
       <div className="container">
         <Routes>
-          <Route path="/register" element={<Register />} />
+            <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<PrivateRoute />}>
             <Route index element={<Dashboard />} />
+          </Route>
+          <Route path="/dashboard/project/:projectId" element={<PrivateRoute />}>
+            <Route index element={<ProjectDetail />} />
           </Route>
           <Route path="/" element={<Welcome />} />
         </Routes>

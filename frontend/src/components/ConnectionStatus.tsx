@@ -1,4 +1,4 @@
-import React, { useState, useEffect, type JSX } from 'react';
+import { useState, useEffect, type JSX } from 'react';
 import axios from 'axios';
 
 interface ConnectionStatusProps {
@@ -12,7 +12,7 @@ const ConnectionStatus = ({ className = '' }: ConnectionStatusProps): JSX.Elemen
   const checkConnection = async () => {
     try {
       setStatus('checking');
-      const response = await axios.get('/api/auth/profile', { timeout: 5000 });
+      await axios.get('/api/auth/profile', { timeout: 5000 });
       setStatus('connected');
       setLastChecked(new Date());
     } catch (error) {

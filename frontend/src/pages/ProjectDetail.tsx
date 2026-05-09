@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, type JSX } from 'react';
+import { useState, useEffect, useContext, type JSX } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -222,9 +222,6 @@ const ProjectDetail = (): JSX.Element => {
         new Date(a.createdAt).getTime()
       );
     });
-
-  const completedTasks = tasks.filter((task) => task.status === 'done').length;
-  const totalTasks = tasks.length;
 
   if (!projectId) {
     return (
